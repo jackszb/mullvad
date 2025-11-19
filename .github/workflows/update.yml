@@ -1,0 +1,45 @@
+name: Update mullvad-to-adguard SRS
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+
+      - name: Install sing-box
+        run: |
+          curl -fsSL https://sing-box.app/install.sh | sh
+
+      - name: Download mullvad-to-adguard adblock.txt
+        run: |
+          curl -fsSL -o adblock.txt https://raw.githubusercontent.com/cogwheel0/mullvad-to-adguard/main/adguard/all/adblock.txt
+
+      - name: Convert to SRS
+        run: |
+          sing-box rule-set convert --type adguard --output adblock.srs adblock.txt
+
+      - name: Commit and push updated SRS
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add adblock.srs
+
+          if ! git diff --cached --quiet; then
+            DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+            git commit -m "Update mullvad-to-adguard SRS - Updated on $DATE"
+            git remote set-url origin https://$GH_PAT@github.com/${GITHUB_REPOSITORY}.git
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
