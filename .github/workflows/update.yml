@@ -3,7 +3,7 @@ name: Update mullvad-to-adguard SRS
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: "0 4 * * 1"
 
 jobs:
   build-and-push:
